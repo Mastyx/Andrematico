@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="AndreMatico: un'avventura in bicicletta tra i campi, con 20 compiti estratti da un archivio di 200 domande di matematica, geometria e logica per la terza elementare.">
+  <meta name="theme-color" content="#2c5d3c">
+  <title>AndreMatico · In sella verso la matematica</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%23f5c542'/%3E%3Ctext x='50' y='68' text-anchor='middle' font-size='54' font-family='sans-serif' font-weight='bold' fill='%232d5d3f'%3E20%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <noscript>
+    <div class="noscript-message">
+      <strong>AndreMatico ha bisogno di JavaScript.</strong>
+      <p>Attiva JavaScript nel browser e ricarica la pagina per giocare.</p>
+    </div>
+  </noscript>
+  <div class="app" id="app">
+    <header class="topbar" id="topbar">
+      <div class="brand">
+        <div class="brand-avatar">
+          <img src="assets/ciclista.png" alt="Andre in bicicletta">
+          <span class="brand-dot" aria-hidden="true"></span>
+        </div>
+        <div class="brand-copy">
+          <h1>Andre<span>Matico</span></h1>
+          <p>In sella verso la matematica</p>
+        </div>
+      </div>
+
+      <div class="hud" id="hud" aria-label="Progressi della partita">
+        <div class="hud-quest">
+          <div class="hud-quest-top">
+            <span>Compiti</span>
+            <b><span id="hudDone">0</span><small>/20</small></b>
+          </div>
+          <div class="hud-track" aria-hidden="true"><i id="hudBar"></i></div>
+        </div>
+        <div class="hud-pill" title="Stelle conquistate">
+          <span class="hud-pill-icon" aria-hidden="true">★</span>
+          <b id="hudStars">0</b><small>/60</small>
+        </div>
+        <div class="hud-pill hud-score" title="Punteggio">
+          <span class="hud-pill-icon" aria-hidden="true">🏅</span>
+          <b id="hudScore">0</b><small>pt</small>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <button class="icon-btn" id="soundBtn" type="button" aria-pressed="true" aria-label="Disattiva i suoni" title="Suoni">
+          <span id="soundIcon" aria-hidden="true">🔊</span>
+        </button>
+        <button class="icon-btn" id="helpBtn" type="button" aria-label="Come si gioca" title="Come si gioca">
+          <span aria-hidden="true">?</span>
+        </button>
+        <button class="icon-btn" id="restartBtn" type="button" aria-label="Ricomincia la partita" title="Ricomincia">
+          <span aria-hidden="true">↻</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="stage" id="stage">
+      <canvas id="gameCanvas" aria-label="Mappa della campagna. Usa i tasti freccia per muovere Andre."></canvas>
+
+      <div class="zone-chip" id="zoneChip" aria-live="polite">
+        <span class="zone-chip-icon" id="zoneChipIcon" aria-hidden="true">🌿</span>
+        <span class="zone-chip-copy">
+          <small>Zona</small>
+          <b id="zoneChipName">In esplorazione</b>
+        </span>
+      </div>
+
+      <div class="minimap-card" id="minimapCard" aria-hidden="true">
+        <div class="minimap-head"><span>Mappa</span><span id="minimapCount">0/20</span></div>
+        <canvas id="minimap"></canvas>
+      </div>
+
+      <div class="map-hint" id="mapHint">
+        <span><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> pedala</span>
+        <span class="hint-sep"></span>
+        <span><kbd>E</kbd> rispondi</span>
+      </div>
+
+      <button class="interact-prompt" id="interactPrompt" type="button" aria-label="Apri il compito vicino">
+        <span class="prompt-key" aria-hidden="true">E</span>
+        <span class="prompt-copy">
+          <small id="promptZone">Compito</small>
+          <b id="promptText">Apri il compito</b>
+        </span>
+        <span class="prompt-go" aria-hidden="true">→</span>
+      </button>
+
+      <div class="touch-controls" id="touchControls" aria-label="Comandi touch">
+        <div class="dpad">
+          <button class="dpad-btn dpad-up" data-move="up" type="button" aria-label="Su">▲</button>
+          <button class="dpad-btn dpad-left" data-move="left" type="button" aria-label="Sinistra">◀</button>
+          <button class="dpad-btn dpad-right" data-move="right" type="button" aria-label="Destra">▶</button>
+          <button class="dpad-btn dpad-down" data-move="down" type="button" aria-label="Giù">▼</button>
+        </div>
+        <button class="touch-action" id="touchAction" type="button" aria-label="Apri il compito vicino">
+          <span aria-hidden="true">✓</span>
+          <small>Rispondi</small>
+        </button>
+      </div>
+
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+      <div class="confetti-layer" id="confettiLayer" aria-hidden="true"></div>
+    </main>
+  </div>
+
+  <!-- ============================ SCHERMATA INIZIALE ============================ -->
+  <section class="screen start-screen" id="startScreen" aria-labelledby="gameTitle">
+    <div class="start-sky" aria-hidden="true">
+      <span class="cloud cloud-a"></span>
+      <span class="cloud cloud-b"></span>
+      <span class="cloud cloud-c"></span>
+      <span class="sun-disc"></span>
+      <span class="hill hill-a"></span>
+      <span class="hill hill-b"></span>
+    </div>
+
+    <div class="start-panel">
+      <div class="start-copy">
+        <span class="eyebrow"><span aria-hidden="true">🚴</span> Avventura didattica · Classe 3ª</span>
+        <h2 class="game-logo" id="gameTitle">Andre<span>Matico</span><i class="logo-dot">!</i></h2>
+        <p class="tagline">Pedala tra i campi, trova i cartelli e risolvi <strong>20 compiti</strong> estratti a caso da un archivio di <strong>200 domande</strong>. Se li completi tutti, Andre ti regala un finale da campione!</p>
+
+        <div class="start-pills" aria-label="Caratteristiche del gioco">
+          <span>🧮 Numeri</span>
+          <span>📐 Forme</span>
+          <span>🧩 Logica</span>
+          <span>🏁 Gran finale</span>
+          <span id="bankPill">📚 200 domande</span>
+        </div>
+
+        <div class="start-howto">
+          <div class="howto-item">
+            <div class="key-row"><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd></div>
+            <p><b>Muoviti</b> per la mappa</p>
+          </div>
+          <div class="howto-item">
+            <div class="key-row"><kbd>E</kbd><span class="key-or">oppure</span><kbd>Spazio</kbd></div>
+            <p><b>Rispondi</b> al cartello vicino</p>
+          </div>
+          <div class="howto-item">
+            <div class="key-row"><span class="mini-medal" aria-hidden="true">★</span></div>
+            <p><b>3 stelle</b> se indovini al primo colpo</p>
+          </div>
+        </div>
+
+        <div class="start-actions">
+          <button class="btn btn-primary btn-start" id="startBtn" type="button">
+            <span>Parti in bici!</span><span class="btn-arrow" aria-hidden="true">→</span>
+          </button>
+          <button class="btn btn-ghost" id="startHelpBtn" type="button">Come si gioca</button>
+        </div>
+        <p class="start-note" id="bestNote">Nessuna fretta: puoi riprovare tutte le risposte.</p>
+      </div>
+
+      <div class="start-art">
+        <div class="photo-frame">
+          <span class="tape tape-top" aria-hidden="true"></span>
+          <span class="tape tape-bottom" aria-hidden="true"></span>
+          <img src="assets/ciclista.png" alt="Andre, con casco blu e maglietta rossa, pronto a partire in mountain bike">
+          <div class="photo-badge"><span aria-hidden="true">🚲</span> Andre</div>
+        </div>
+        <div class="float-card float-question" aria-hidden="true">
+          <span>Quanto fa?</span>
+          <b>7 × 8</b>
+          <small>= ?</small>
+        </div>
+        <div class="float-card float-star" aria-hidden="true">
+          <span>★</span><b>20</b><small>compiti</small>
+        </div>
+        <div class="float-card float-zone" aria-hidden="true">
+          <span>📍</span><b>4 zone</b><small>da esplorare</small>
+        </div>
+        <div class="doodle doodle-plus" aria-hidden="true">+</div>
+        <div class="doodle doodle-tri" aria-hidden="true">△</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ SCHERMATA VITTORIA ============================ -->
+  <section class="screen victory-screen" id="victoryScreen" hidden aria-labelledby="victoryTitle">
+    <div class="victory-top">
+      <span class="victory-eyebrow"><span aria-hidden="true">🏆</span> 20 compiti su 20</span>
+      <h2 id="victoryTitle">Campione di <span>AndreMatico!</span></h2>
+      <p>Guarda Andre: impennata finale su una ruota sola!</p>
+    </div>
+
+    <div class="victory-bottom">
+      <div class="victory-stats">
+        <div class="victory-stat"><span aria-hidden="true">★</span><b id="victoryStars">60</b><small>stelle su 60</small></div>
+        <div class="victory-stat"><span aria-hidden="true">🏅</span><b id="victoryScore">2000</b><small>punti</small></div>
+        <div class="victory-stat"><span aria-hidden="true">✅</span><b>20/20</b><small>compiti</small></div>
+      </div>
+      <p class="victory-record" id="victoryRecord" hidden>Nuovo record personale!</p>
+      <div class="victory-actions">
+        <button class="btn btn-primary" id="replayBtn" type="button">Gioca ancora <span aria-hidden="true">↻</span></button>
+        <button class="btn btn-ghost on-dark" id="exploreBtn" type="button">Esplora la mappa</button>
+      </div>
+      <p class="victory-tip">Premi <kbd>Invio</kbd> per tornare a esplorare</p>
+    </div>
+  </section>
+
+  <!-- ============================ QUIZ ============================ -->
+  <div class="modal" id="quizModal" aria-hidden="true">
+    <div class="modal-backdrop" id="quizBackdrop"></div>
+    <section class="quiz-card" role="dialog" aria-modal="true" aria-labelledby="quizQuestion">
+      <div class="quiz-accent" id="quizAccent"></div>
+      <header class="quiz-head">
+        <div class="quiz-zone">
+          <span class="quiz-zone-icon" id="quizZoneIcon" aria-hidden="true">🔢</span>
+          <span id="quizZoneName">Prato dei Numeri</span>
+        </div>
+        <div class="quiz-progress-label">Compito <b id="quizNumber">1</b> <span>/ 20</span></div>
+        <button class="icon-btn quiz-close" id="quizClose" type="button" aria-label="Chiudi il compito e torna alla mappa">×</button>
+      </header>
+      <div class="quiz-global-track" aria-hidden="true"><i id="quizGlobalBar"></i></div>
+
+      <div class="quiz-body">
+        <div class="question-top">
+          <span class="topic-chip" id="quizTopic">Tabelline</span>
+          <button class="speak-btn" id="speakBtn" type="button">
+            <span aria-hidden="true">🔊</span> Ascolta
+          </button>
+        </div>
+        <h2 id="quizQuestion"></h2>
+        <div class="quiz-diagram" id="quizDiagram" hidden></div>
+        <div class="answers" id="quizAnswers" role="group" aria-label="Scegli la risposta"></div>
+        <div class="feedback" id="quizFeedback" role="status" aria-live="polite"></div>
+      </div>
+
+      <footer class="quiz-foot">
+        <div class="quiz-tries" id="quizTries">Primo tentativo</div>
+        <button class="btn btn-primary quiz-continue" id="quizContinue" type="button" hidden>Continua <span aria-hidden="true">→</span></button>
+      </footer>
+    </section>
+  </div>
+
+  <!-- ============================ AIUTO ============================ -->
+  <div class="modal" id="helpModal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-help></div>
+    <section class="help-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+      <button class="icon-btn help-close" id="helpClose" type="button" aria-label="Chiudi l'aiuto">×</button>
+      <span class="eyebrow"><span aria-hidden="true">🗺️</span> Manuale di viaggio</span>
+      <h2 id="helpTitle">Come si gioca</h2>
+      <div class="help-grid">
+        <div class="help-step"><b>1</b><div><h3>Pedala</h3><p>Usa le <kbd>frecce</kbd> (o <kbd>WASD</kbd>) per girare la campagna. Sulla mappa trovi quattro zone e 20 compiti estratti a caso da 200 domande.</p></div></div>
+        <div class="help-step"><b>2</b><div><h3>Trova i cartelli</h3><p>Avvicinati a un cartello numerato e premi <kbd>E</kbd> o <kbd>Spazio</kbd> per aprire il compito.</p></div></div>
+        <div class="help-step"><b>3</b><div><h3>Rispondi</h3><p>Scegli una delle quattro risposte. Puoi usare anche i tasti <kbd>1</kbd>–<kbd>4</kbd>. Se sbagli, ricevi un suggerimento e puoi riprovare.</p></div></div>
+        <div class="help-step"><b>4</b><div><h3>Vinci!</h3><p>Completa tutti i <b>20 compiti</b> per vedere Andre pedalare in equilibrio su una ruota sola.</p></div></div>
+      </div>
+      <div class="help-legend">
+        <span><i class="dot dot-todo"></i> Da completare</span>
+        <span><i class="dot dot-done"></i> Completato</span>
+        <span><i class="dot dot-you"></i> Tu sei qui</span>
+      </div>
+      <div class="help-actions">
+        <button class="btn btn-primary" id="helpPlayBtn" type="button">Ho capito, si parte!</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="rotate-note" aria-hidden="true">
+    <span>🔄</span>
+    <p>Per un'avventura più comoda, ruota il telefono in orizzontale.</p>
+  </div>
+
+  <script src="questions.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
